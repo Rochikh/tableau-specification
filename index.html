@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau de spécification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Plan : bandeau de diagnostic en haut, grille objectifs x questions au centre, aide en bas */
+  --ink: #1b2432;
+  --muted: #5a6577;
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --line: #d3dae4;
+  --accent: #16345F;
+  --accent-soft: #e5ecf5;
+  --on-accent: #ffffff;
+  --ok: #1d7448; --ok-soft: #e3f2ea;
+  --warn: #8f5500; --warn-soft: #fbefd9;
+  --bad: #b3261e; --bad-soft: #fbe8e6;
+  --info: #35537d; --info-soft: #e7eef7;
+  --display: "Space Grotesk", Arial, sans-serif;
+  --body: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e4e9f0; --muted: #9ba7b9; --bg: #0e1520; --surface: #162030; --line: #2b3a50;
+    --accent: #93b5e6; --accent-soft: #1d2b42; --on-accent: #0e1520;
+    --ok: #67c697; --ok-soft: #15301f; --warn: #e3ac55; --warn-soft: #382914;
+    --bad: #f08c82; --bad-soft: #3b1c1a; --info: #a3bde2; --info-soft: #1b283b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #e4e9f0; --muted: #9ba7b9; --bg: #0e1520; --surface: #162030; --line: #2b3a50;
+  --accent: #93b5e6; --accent-soft: #1d2b42; --on-accent: #0e1520;
+  --ok: #67c697; --ok-soft: #15301f; --warn: #e3ac55; --warn-soft: #382914;
+  --bad: #f08c82; --bad-soft: #3b1c1a; --info: #a3bde2; --info-soft: #1b283b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 20px 40px; display: grid; gap: 18px; }
+h1, h2, h3 { font-family: var(--display); color: var(--accent); margin: 0; text-wrap: balance; }
+h1 { font-size: 26px; font-weight: 700; }
+h2 { font-size: 17px; font-weight: 700; }
+.muted { color: var(--muted); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; justify-content: space-between; }
+.titlebox { display: grid; gap: 6px; flex: 1 1 420px; }
+.titlebox label { font-size: 13px; color: var(--muted); }
+#testTitle { font-family: var(--display); font-size: 20px; font-weight: 500; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 7px 10px; width: 100%; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 7px 12px; font-size: 14px; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn.danger { border-color: var(--bad); color: var(--bad); }
+.status { font-size: 13px; color: var(--muted); min-height: 18px; }
+
+.banner { background: var(--info-soft); color: var(--info); border-radius: 6px; padding: 8px 12px; font-size: 14px; }
+
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; align-content: start; }
+.tile .k { font-size: 13px; color: var(--muted); }
+.tile .v { font-family: var(--display); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile .v.good { color: var(--ok); }
+.tile .v.bad { color: var(--bad); }
+.levels { display: grid; gap: 3px; margin-top: 2px; }
+.lvl { display: grid; grid-template-columns: 92px 1fr 20px; gap: 6px; align-items: center; font-size: 12px; }
+.lvl .bar { height: 8px; background: var(--accent-soft); border-radius: 4px; overflow: hidden; }
+.lvl .bar span { display: block; height: 100%; background: var(--accent); }
+.lvl .n { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 10px; }
+.alerts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.alerts li { border-left: 4px solid; border-radius: 4px; padding: 6px 10px; font-size: 14px; }
+.alerts li b { margin-right: 4px; }
+.a-bad { border-color: var(--bad); background: var(--bad-soft); }
+.a-warn { border-color: var(--warn); background: var(--warn-soft); }
+.a-info { border-color: var(--info); background: var(--info-soft); }
+.a-ok { border-color: var(--ok); background: var(--ok-soft); }
+.a-bad b { color: var(--bad); } .a-warn b { color: var(--warn); } .a-info b { color: var(--info); } .a-ok b { color: var(--ok); }
+
+.gridhead { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; }
+th, td { border: 1px solid var(--line); padding: 0; vertical-align: middle; }
+thead th { background: var(--accent); color: var(--on-accent); font-family: var(--display); font-weight: 500; font-size: 14px; padding: 7px 6px; text-align: center; }
+thead th.objh { text-align: left; min-width: 320px; padding-left: 10px; }
+.qh { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.qh button { background: transparent; border: 0; color: var(--on-accent); opacity: .7; font-size: 13px; padding: 0 2px; }
+.qh button:hover { opacity: 1; }
+td.obj { padding: 6px 8px; }
+.objline { display: flex; gap: 6px; align-items: flex-start; }
+.objnum { font-family: var(--display); font-weight: 700; color: var(--accent); padding-top: 6px; min-width: 18px; }
+.objline textarea { flex: 1; border: 1px solid transparent; background: transparent; border-radius: 4px; padding: 5px 6px; resize: vertical; min-height: 34px; font: inherit; color: inherit; line-height: 1.35; }
+.objline textarea:hover, .objline textarea:focus { border-color: var(--line); background: var(--bg); }
+.del { background: transparent; border: 0; color: var(--muted); font-size: 16px; padding: 4px 6px; }
+.del:hover { color: var(--bad); }
+.chip { display: inline-block; font-size: 12px; border-radius: 10px; padding: 1px 8px; margin: 3px 0 0 24px; }
+.chip.lv { background: var(--accent-soft); color: var(--accent); }
+.chip.weak { background: var(--warn-soft); color: var(--warn); }
+.chip.unk { background: var(--bg); color: var(--muted); border: 1px dashed var(--line); }
+td.cell { text-align: center; min-width: 86px; position: relative; height: 46px; }
+.mark { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; font-family: var(--display); font-weight: 700; font-size: 18px; color: var(--accent); }
+.mark:hover { background: var(--accent-soft); }
+.mark[aria-pressed="true"] { background: var(--accent-soft); }
+td.tot, th.tot { width: 76px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; position: sticky; right: 0; z-index: 1; box-shadow: -2px 0 0 var(--line); }
+td.tot { background: var(--surface); }
+th.tot { background: var(--accent); }
+tr.coltot td.tot, tr.meta td.tot { background: var(--bg); }
+td.tot.zero { color: var(--bad); background: var(--bad-soft); }
+tr.meta th { text-align: left; font-size: 13px; padding: 6px 10px; background: var(--bg); color: var(--ink); font-family: var(--body); font-weight: bold; }
+tr.meta td { padding: 3px; background: var(--bg); }
+tr.meta select { width: 100%; min-width: 84px; font-size: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); padding: 3px 2px; }
+tr.coltot td { text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; padding: 5px 0; background: var(--bg); }
+tr.coltot td.zero { color: var(--bad); background: var(--bad-soft); }
+tr.coltot th { text-align: left; font-size: 13px; padding: 6px 10px; background: var(--bg); color: var(--ink); font-family: var(--body); font-weight: bold; }
+
+.setup { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.setup label { font-size: 14px; color: var(--muted); }
+.setup input { width: 76px; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--surface); font-variant-numeric: tabular-nums; }
+.qlist { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px 14px; }
+.qlist li { display: flex; gap: 8px; align-items: flex-start; }
+.qlist .qn { font-family: var(--display); font-weight: 700; color: var(--accent); min-width: 34px; padding-top: 6px; }
+.qlist textarea { flex: 1; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--surface); resize: vertical; min-height: 36px; font: inherit; color: inherit; line-height: 1.35; }
+.help { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.help .panel { font-size: 14px; }
+.help p { margin: 0; }
+.verbs { font-size: 13px; color: var(--muted); }
+.hidden { display: none !important; }
+#fileIn { display: none; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 420px) { .wrap { padding: 14px 16px 30px; } h1 { font-size: 22px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="titlebox">
+      <h1>Tableau de spécification</h1>
+      <label for="testTitle">Nom du test</label>
+      <input id="testTitle" type="text" placeholder="Nom de votre test">
+    </div>
+    <div class="actions" role="group" aria-label="Fichier">
+      <button class="btn" id="btnNew" type="button">Nouveau test</button>
+      <button class="btn" id="btnImport" type="button">Ouvrir un fichier .json</button>
+      <button class="btn hidden" id="btnSaveJson" type="button">Enregistrer (.json)</button>
+      <button class="btn hidden" id="btnCsv" type="button">Exporter pour Excel (.csv)</button>
+      <button class="btn primary" id="btnCopy" type="button">Copier le tableau</button>
+      <input id="fileIn" type="file" accept=".json,application/json">
+    </div>
+  </header>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+  <section class="panel" aria-labelledby="setupTitle">
+    <h2 id="setupTitle">1. Dimensions du test</h2>
+    <form class="setup" id="setupForm">
+      <label for="nObj">Nombre d'objectifs</label>
+      <input id="nObj" type="number" min="1" max="20" step="1" required>
+      <label for="nQ">Nombre de questions</label>
+      <input id="nQ" type="number" min="1" max="60" step="1" required>
+      <button class="btn primary" id="btnResize" type="submit">Créer la grille</button>
+    </form>
+    <p class="muted" style="margin:0;font-size:14px">Réduire un nombre retire les dernières lignes ou colonnes, avec leurs coches.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="qTitle">
+    <h2 id="qTitle">2. Vos questions</h2>
+    <p class="muted" style="margin:0;font-size:14px">Recopiez ou résumez chaque question de votre test. Le texte s'affiche au survol de Q1, Q2… dans le tableau et part dans les exports.</p>
+    <ol class="qlist" id="qlist"></ol>
+  </section>
+
+  <section class="panel" aria-labelledby="gridTitle">
+    <div class="gridhead">
+      <h2 id="gridTitle">3. Vos objectifs face à vos questions</h2>
+    </div>
+    <p class="muted" style="margin:0;font-size:14px">Écrivez chaque objectif avec un verbe mesurable. Cochez la case quand la question vérifie l'objectif : le total de chaque objectif se calcule seul en bout de ligne. Choisissez en bas le niveau, le format et la fonction de chaque question.</p>
+    <div class="scroller"><table id="grid"></table></div>
+  </section>
+
+  <section class="summary" aria-label="Synthèse">
+    <div class="tile"><span class="k">Objectifs évalués par au moins une question</span><span class="v" id="tObj">0 / 0</span></div>
+    <div class="tile"><span class="k">Questions rattachées à un objectif</span><span class="v" id="tQ">0 / 0</span></div>
+    <div class="tile"><span class="k">Fonction du test</span><span class="v" id="tFn" style="font-size:18px">Non renseignée</span></div>
+    <div class="tile"><span class="k">Niveaux visés par les questions</span><div class="levels" id="tLv"></div></div>
+  </section>
+
+  <section class="panel" aria-labelledby="diagTitle">
+    <h2 id="diagTitle">4. Diagnostic</h2>
+    <ul class="alerts" id="alerts"></ul>
+  </section>
+
+  <section class="help" aria-label="Aide">
+    <div class="panel">
+      <h2>Lire le tableau</h2>
+      <p><b>Ligne vide</b> : l'objectif n'est pas évalué.</p>
+      <p><b>Colonne vide</b> : la question est à supprimer ou à rattacher.</p>
+      <p><b>Total déséquilibré</b> : le test ne reflète pas le poids des objectifs du module.</p>
+      <p><b>Niveau de la question inférieur au verbe de l'objectif</b> : la question vérifie moins que ce que l'objectif annonce.</p>
+    </div>
+    <div class="panel">
+      <h2>Trois fonctions</h2>
+      <p><b>P, positionnement</b> : avant le module, score indicatif, oriente le parcours.</p>
+      <p><b>AE, auto-évaluation</b> : pendant le module, feedback explicatif, rien n'est enregistré.</p>
+      <p><b>TF, test final</b> : à la fin, score enregistré avec seuil, atteste l'atteinte des objectifs.</p>
+    </div>
+    <div class="panel">
+      <h2>Verbes mesurables</h2>
+      <p class="verbs"><b>Se souvenir</b> : citer, reconnaître, identifier · <b>Comprendre</b> : expliquer, reformuler, classer · <b>Appliquer</b> : calculer, utiliser, remplir · <b>Analyser</b> : distinguer, diagnostiquer, repérer · <b>Évaluer</b> : juger, choisir, justifier · <b>Créer</b> : concevoir, rédiger, construire.</p>
+      <p class="verbs">À éviter : connaître, comprendre, savoir, maîtriser, être sensibilisé. On ne peut pas les observer.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var LEVELS = ["Se souvenir", "Comprendre", "Appliquer", "Analyser", "Évaluer", "Créer"];
+  var FUNCS = { P: "Positionnement", AE: "Auto-évaluation", TF: "Test final" };
+  var FORMATS = ["Choix unique", "Réponses multiples", "Texte à compléter", "Appariement", "Vrai / faux", "Mise en situation", "Question ouverte", "Autre"];
+  var VERBS = {
+    1: ["citer", "nommer", "lister", "énumérer", "reconnaître", "identifier", "définir", "rappeler", "retrouver", "mémoriser", "situer"],
+    2: ["expliquer", "reformuler", "décrire", "résumer", "illustrer", "interpréter", "classer", "comparer", "associer", "traduire", "présenter", "catégoriser"],
+    3: ["appliquer", "calculer", "utiliser", "exécuter", "mettre en œuvre", "réaliser", "résoudre", "remplir", "compléter", "paramétrer", "manipuler", "effectuer", "renseigner", "traiter", "orienter", "accueillir", "informer"],
+    4: ["analyser", "distinguer", "diagnostiquer", "différencier", "repérer", "organiser", "déterminer", "examiner", "décomposer", "détecter", "hiérarchiser", "relier"],
+    5: ["évaluer", "juger", "justifier", "choisir", "critiquer", "argumenter", "vérifier", "contrôler", "valider", "recommander", "arbitrer", "décider", "sélectionner"],
+    6: ["concevoir", "créer", "construire", "élaborer", "planifier", "produire", "inventer", "composer", "proposer", "rédiger", "formuler", "imaginer", "développer"]
+  };
+  var WEAK = ["connaître", "comprendre", "savoir", "maîtriser", "être sensibilisé", "être sensibilisée", "appréhender", "découvrir", "être conscient", "prendre conscience", "s'approprier", "se familiariser", "sensibiliser"];
+  var KEY = "tableau-specification-v2";
+
+  function uid() { return Math.random().toString(36).slice(2, 10); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  function blank() {
+    var o = [], q = [];
+    for (var i = 0; i < 5; i++) o.push({ id: uid(), text: "" });
+    for (var j = 0; j < 10; j++) q.push({ id: uid(), text: "", level: 0, fn: "", format: "" });
+    return { title: "", objectives: o, questions: q, marks: {}, example: false };
+  }
+
+  var S;
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) { var d = JSON.parse(raw); if (valid(d)) return d; }
+    } catch (e) { /* stockage indisponible */ }
+    return blank();
+  }
+  function valid(d) { return d && Array.isArray(d.objectives) && Array.isArray(d.questions) && typeof d.marks === "object"; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignoré */ } }
+
+  // Détection du verbe et de son niveau
+  function norm(s) { return " " + s.toLowerCase().replace(/[’]/g, "'").replace(/[^a-zàâäçéèêëîïôöùûüœ' ]/g, " ") + " "; }
+  function findWord(t, w) {
+    var i = t.indexOf(" " + w + " ");
+    if (i < 0 && w.indexOf(" ") < 0) {
+      // formes conjuguées simples : citer -> cite, citent ; choisir -> choisit
+      var stem = w.replace(/(er|ir|re)$/, "");
+      if (stem.length >= 4) {
+        var m = t.match(new RegExp(" " + stem + "(e|es|ent|it|issent|ant|é|ée|s|t)? "));
+        if (m) i = m.index;
+      }
+    }
+    return i;
+  }
+  function verbInfo(text) {
+    var t = norm(text || "");
+    if (!text || !text.trim()) return null;
+    var best = null;
+    WEAK.forEach(function (w) { var i = findWord(t, w); if (i >= 0 && (!best || i < best.i)) best = { i: i, verb: w, weak: true }; });
+    Object.keys(VERBS).forEach(function (lv) {
+      VERBS[lv].forEach(function (w) { var i = findWord(t, w); if (i >= 0 && (!best || i < best.i)) best = { i: i, verb: w, level: +lv }; });
+    });
+    return best || { unknown: true };
+  }
+
+  var mk = function (o, q) { return !!S.marks[o.id + "|" + q.id]; };
+  function activeQ(q) { return S.objectives.some(function (o) { return mk(o, q); }) || q.level || q.fn || q.format || (q.text && q.text.trim()); }
+  function activeO(o) { return (o.text && o.text.trim()) || S.questions.some(function (q) { return mk(o, q); }); }
+  function listQ(arr) { return arr.map(function (x) { return "Q" + x; }).join(", "); }
+  function listO(arr) { return arr.length === 1 ? "l'objectif " + arr[0] : "les objectifs " + arr.slice(0, -1).join(", ") + " et " + arr[arr.length - 1]; }
+
+  // Rendu de la grille
+  var grid = document.getElementById("grid");
+  var qlist = document.getElementById("qlist");
+  function renderQList() {
+    qlist.innerHTML = S.questions.map(function (q, j) {
+      return "<li><span class='qn'>Q" + (j + 1) + "</span><textarea rows='1' data-id='" + q.id + "' data-k='t" + q.id + "' aria-label='Texte de la question " + (j + 1) + "' placeholder='Question " + (j + 1) + "'>" + esc(q.text || "") + "</textarea></li>";
+    }).join("");
+    qlist.querySelectorAll("textarea").forEach(autosize);
+  }
+  qlist.addEventListener("input", function (e) {
+    var t = e.target; if (t.tagName !== "TEXTAREA") return;
+    var q = S.questions.find(function (x) { return x.id === t.getAttribute("data-id"); });
+    if (!q) return;
+    q.text = t.value; autosize(t);
+    var th = grid.querySelectorAll("thead th")[S.questions.indexOf(q) + 2]; if (th) th.title = q.text;
+    refresh(false);
+  });
+  function renderGrid() {
+    var focusKey = document.activeElement && document.activeElement.getAttribute("data-k");
+    if (!focusKey || focusKey.charAt(0) !== "t") renderQList();
+    var qs = S.questions, os = S.objectives, h = [];
+    h.push("<thead><tr><th class='objh' scope='col'>Objectif (verbe mesurable)</th>");
+    qs.forEach(function (q, j) {
+      h.push("<th scope='col' title='" + esc(q.text || "") + "'><span class='qh'>Q" + (j + 1) + "</span></th>");
+    });
+    h.push("<th class='tot' scope='col'>Total questions</th></tr></thead><tbody>");
+    os.forEach(function (o, i) {
+      var tot = qs.filter(function (q) { return mk(o, q); }).length;
+      h.push("<tr><td class='obj'><div class='objline'><span class='objnum'>" + (i + 1) + "</span><textarea rows='1' aria-label='Objectif " + (i + 1) + "' data-id='" + o.id + "' data-k='o" + o.id + "' placeholder='Objectif " + (i + 1) + " : verbe mesurable + contenu'>" + esc(o.text) + "</textarea></div><span id='chip-" + o.id + "'></span></td>");
+      qs.forEach(function (q, j) {
+        var on = mk(o, q);
+        h.push("<td class='cell'><button type='button' class='mark' data-act='mark' data-o='" + o.id + "' data-q='" + q.id + "' data-k='m" + o.id + q.id + "' aria-pressed='" + on + "' aria-label='Objectif " + (i + 1) + ", Q" + (j + 1) + "'>" + (on ? "X" : "") + "</button></td>");
+      });
+      h.push("<td class='tot" + (tot === 0 && activeO(o) ? " zero" : "") + "'>" + tot + "</td></tr>");
+    });
+    // ligne des totaux par question
+    h.push("<tr class='coltot'><th scope='row'>Objectifs vérifiés par la question</th>");
+    qs.forEach(function (q) {
+      var n = os.filter(function (o) { return mk(o, q); }).length;
+      h.push("<td class='" + (n === 0 && activeQ(q) ? "zero" : "") + "'>" + n + "</td>");
+    });
+    h.push("<td class='tot'></td></tr>");
+    // lignes de description des questions
+    h.push(metaRow("Niveau visé par la question", "level", [["", "…"]].concat(LEVELS.map(function (l, k) { return [String(k + 1), l]; }))));
+    h.push(metaRow("Format de question", "format", [["", "…"]].concat(FORMATS.map(function (f) { return [f, f]; }))));
+    h.push(metaRow("Fonction (P, AE, TF)", "fn", [["", "…"], ["P", "P"], ["AE", "AE"], ["TF", "TF"]]));
+    h.push("</tbody>");
+    grid.innerHTML = h.join("");
+    autosizeAll();
+    renderChips();
+    if (focusKey) { var el = grid.querySelector("[data-k='" + focusKey + "']"); if (el) el.focus(); }
+  }
+  function metaRow(label, field, opts) {
+    var h = ["<tr class='meta'><th scope='row'>" + label + "</th>"];
+    S.questions.forEach(function (q, j) {
+      var cur = String(q[field] || "");
+      h.push("<td><select data-field='" + field + "' data-id='" + q.id + "' data-k='s" + field + q.id + "' aria-label='" + label + ", Q" + (j + 1) + "'>");
+      opts.forEach(function (op) { h.push("<option value='" + esc(op[0]) + "'" + (op[0] === cur ? " selected" : "") + ">" + esc(op[1]) + "</option>"); });
+      h.push("</select></td>");
+    });
+    h.push("<td class='tot'></td></tr>");
+    return h.join("");
+  }
+  function renderChips() {
+    S.objectives.forEach(function (o) {
+      var el = document.getElementById("chip-" + o.id);
+      if (!el) return;
+      var v = verbInfo(o.text);
+      if (!v) { el.innerHTML = ""; return; }
+      if (v.weak) el.innerHTML = "<span class='chip weak'>« " + esc(v.verb) + " » ne s'observe pas</span>";
+      else if (v.unknown) el.innerHTML = "<span class='chip unk'>Verbe non reconnu</span>";
+      else el.innerHTML = "<span class='chip lv'>" + LEVELS[v.level - 1] + " (" + esc(v.verb) + ")</span>";
+    });
+  }
+  function autosize(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + 2) + "px"; }
+  function autosizeAll() { grid.querySelectorAll("textarea").forEach(autosize); }
+
+  // Diagnostic
+  function renderDiag() {
+    var os = S.objectives, qs = S.questions;
+    var aO = os.filter(activeO), aQ = qs.filter(activeQ);
+    var idxO = function (o) { return os.indexOf(o) + 1; }, idxQ = function (q) { return qs.indexOf(q) + 1; };
+    var covered = aO.filter(function (o) { return qs.some(function (q) { return mk(o, q); }); });
+    var linked = aQ.filter(function (q) { return os.some(function (o) { return mk(o, q); }); });
+
+    var tObj = document.getElementById("tObj"), tQ = document.getElementById("tQ");
+    tObj.textContent = covered.length + " / " + aO.length;
+    tObj.className = "v " + (aO.length && covered.length === aO.length ? "good" : (aO.length ? "bad" : ""));
+    tQ.textContent = linked.length + " / " + aQ.length;
+    tQ.className = "v " + (aQ.length && linked.length === aQ.length ? "good" : (aQ.length ? "bad" : ""));
+
+    var fns = {}; aQ.forEach(function (q) { if (q.fn) fns[q.fn] = (fns[q.fn] || 0) + 1; });
+    var fk = Object.keys(fns);
+    document.getElementById("tFn").textContent = fk.length === 0 ? "Non renseignée" : fk.length === 1 ? FUNCS[fk[0]] : "Mélange : " + fk.join(", ");
+
+    var cnt = [0, 0, 0, 0, 0, 0]; aQ.forEach(function (q) { if (q.level) cnt[q.level - 1]++; });
+    var mx = Math.max.apply(null, cnt.concat([1]));
+    document.getElementById("tLv").innerHTML = LEVELS.map(function (l, k) {
+      return "<div class='lvl'><span>" + l + "</span><span class='bar'><span style='width:" + Math.round(cnt[k] / mx * 100) + "%'></span></span><span class='n'>" + cnt[k] + "</span></div>";
+    }).join("");
+
+    var A = [];
+    var unc = aO.filter(function (o) { return covered.indexOf(o) < 0; }).map(idxO);
+    if (unc.length) A.push(["bad", "Ligne vide.", (unc.length === 1 ? "L'objectif " + unc[0] + " n'est vérifié" : "Les objectifs " + unc.join(", ") + " ne sont vérifiés") + " par aucune question : il" + (unc.length > 1 ? "s ne sont" : " n'est") + " pas évalué" + (unc.length > 1 ? "s" : "") + "."]);
+    var orphan = aQ.filter(function (q) { return linked.indexOf(q) < 0; }).map(idxQ);
+    if (orphan.length) A.push(["warn", "Colonne vide.", listQ(orphan) + " ne " + (orphan.length > 1 ? "sont rattachées" : "est rattachée") + " à aucun objectif : à supprimer ou à rattacher."]);
+
+    aO.forEach(function (o) {
+      var v = verbInfo(o.text);
+      if (!v) return;
+      if (v.weak) A.push(["warn", "Verbe non observable.", "Objectif " + idxO(o) + " : « " + v.verb + " » ne se vérifie pas par une question. Préférez citer, expliquer, calculer, distinguer, justifier."]);
+      else if (v.unknown) A.push(["info", "Verbe non reconnu.", "Objectif " + idxO(o) + " : vérifiez que le verbe décrit une action observable."]);
+    });
+
+    var tots = covered.map(function (o) { return { o: o, n: qs.filter(function (q) { return mk(o, q); }).length }; });
+    if (tots.length >= 2) {
+      tots.sort(function (a, b) { return b.n - a.n; });
+      var hi = tots[0], lo = tots[tots.length - 1];
+      if (hi.n >= 3 && hi.n >= 3 * lo.n) A.push(["warn", "Total déséquilibré.", "L'objectif " + idxO(hi.o) + " compte " + hi.n + " questions, l'objectif " + idxO(lo.o) + " " + (lo.n === 1 ? "une seule" : lo.n) + ". Vérifiez que ce poids correspond à l'importance des objectifs."]);
+    }
+
+    var gapsTF = [], gapsP = [];
+    os.forEach(function (o) {
+      var v = verbInfo(o.text);
+      if (!v || !v.level) return;
+      qs.forEach(function (q) {
+        if (!mk(o, q) || !q.level || q.level >= v.level) return;
+        var item = { n: idxQ(q), t: "Q" + idxQ(q) + " (" + LEVELS[q.level - 1].toLowerCase() + ", objectif " + idxO(o) + " : " + LEVELS[v.level - 1].toLowerCase() + ")" };
+        (q.fn === "P" ? gapsP : gapsTF).push(item);
+      });
+    });
+    var byQ = function (a, b) { return a.n - b.n; }, txt = function (x) { return x.t; };
+    gapsTF = gapsTF.sort(byQ).map(txt); gapsP = gapsP.sort(byQ).map(txt);
+    if (gapsTF.length) A.push(["warn", "Niveau inférieur au verbe.", gapsTF.join(" · ") + ". La question vérifie moins que ce que l'objectif annonce."]);
+    if (gapsP.length) A.push(["info", "Niveau inférieur au verbe, en positionnement.", gapsP.join(" · ") + ". Acceptable pour un positionnement, insuffisant pour un test final."]);
+
+    var lowFmt = aQ.filter(function (q) { return q.level >= 3 && (q.format === "Vrai / faux" || q.format === "Appariement"); });
+    if (lowFmt.length) A.push(["warn", "Format peu adapté.", lowFmt.map(function (q) { return "Q" + idxQ(q) + " (" + q.format.toLowerCase() + ", niveau " + LEVELS[q.level - 1].toLowerCase() + ")"; }).join(" · ") + ". Ce format vérifie rarement au-delà de comprendre : une mise en situation ou un cas à résoudre convient mieux."]);
+
+    var multi = aQ.filter(function (q) { return os.filter(function (o) { return mk(o, q); }).length > 1; }).map(idxQ);
+    if (multi.length) A.push(["info", "Question à plusieurs objectifs.", listQ(multi) + " " + (multi.length > 1 ? "vérifient" : "vérifie") + " plusieurs objectifs : un échec ne dira pas lequel manque."]);
+
+    if (fk.length > 1) A.push(["info", "Fonctions mélangées.", "Ce test mélange " + fk.map(function (k) { return FUNCS[k].toLowerCase(); }).join(", ") + ". Chaque fonction appelle ses propres réglages : score, feedback, tentatives."]);
+
+    var noLv = aQ.filter(function (q) { return !q.level; }).map(idxQ), noFn = aQ.filter(function (q) { return !q.fn; }).map(idxQ), noFmt = aQ.filter(function (q) { return !q.format; }).map(idxQ);
+    var miss = [];
+    if (noLv.length) miss.push("niveau pour " + listQ(noLv));
+    if (noFn.length) miss.push("fonction pour " + listQ(noFn));
+    if (noFmt.length) miss.push("format pour " + listQ(noFmt));
+    if (miss.length) A.push(["info", "À compléter.", miss.join(" ; ") + "."]);
+
+    var order = { bad: 0, warn: 1, info: 2 };
+    A.sort(function (a, b) { return order[a[0]] - order[b[0]]; });
+    if (!aO.length && !aQ.length) A = [["info", "Grille vide.", "Saisissez vos questions et vos objectifs, puis cochez pour chaque question l'objectif qu'elle vérifie."]];
+    else if (!A.some(function (a) { return a[0] === "bad" || a[0] === "warn"; })) A.unshift(["ok", "Structure cohérente.", "Chaque objectif est évalué et chaque question est rattachée. Reste à vérifier la rédaction des questions."]);
+    document.getElementById("alerts").innerHTML = A.map(function (a) { return "<li class='a-" + a[0] + "'><b>" + esc(a[1]) + "</b>" + esc(a[2]) + "</li>"; }).join("");
+
+  }
+
+  function refresh(full) { if (full) renderGrid(); renderDiag(); save(); }
+
+  // Événements de la grille
+  grid.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]");
+    if (!b) return;
+    var act = b.getAttribute("data-act");
+    if (act === "mark") {
+      var k = b.getAttribute("data-o") + "|" + b.getAttribute("data-q");
+      if (S.marks[k]) delete S.marks[k]; else S.marks[k] = true;
+    }
+    S.example = false;
+    refresh(true);
+  });
+  grid.addEventListener("input", function (e) {
+    var t = e.target;
+    if (t.tagName === "TEXTAREA") {
+      var o = S.objectives.find(function (x) { return x.id === t.getAttribute("data-id"); });
+      if (o) { o.text = t.value; autosize(t); S.example = false; renderChips(); refresh(false); }
+    }
+  });
+  grid.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.tagName === "SELECT") {
+      var q = S.questions.find(function (x) { return x.id === t.getAttribute("data-id"); });
+      var f = t.getAttribute("data-field");
+      if (q) { q[f] = f === "level" ? (+t.value || 0) : t.value; S.example = false; refresh(true); }
+    }
+  });
+
+  // Dimensions : x objectifs, y questions
+  var nObj = document.getElementById("nObj"), nQ = document.getElementById("nQ"), btnResize = document.getElementById("btnResize");
+  var resizeArmed = false, resizeTimer = null;
+  function syncDims() { nObj.value = S.objectives.length; nQ.value = S.questions.length; }
+  function clamp(v, lo, hi) { v = Math.round(+v); return isNaN(v) ? lo : Math.max(lo, Math.min(hi, v)); }
+  document.getElementById("setupForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var x = clamp(nObj.value, 1, 20), y = clamp(nQ.value, 1, 60);
+    var lostO = S.objectives.slice(x).filter(activeO).length, lostQ = S.questions.slice(y).filter(activeQ).length;
+    if ((lostO || lostQ) && !resizeArmed) {
+      resizeArmed = true; btnResize.textContent = "Supprimer " + (lostO ? lostO + " objectif" + (lostO > 1 ? "s" : "") : "") + (lostO && lostQ ? " et " : "") + (lostQ ? lostQ + " question" + (lostQ > 1 ? "s" : "") : "") + " remplis ?"; btnResize.classList.add("danger");
+      resizeTimer = setTimeout(resetResize, 5000);
+      return;
+    }
+    resetResize();
+    while (S.objectives.length < x) S.objectives.push({ id: uid(), text: "" });
+    while (S.questions.length < y) S.questions.push({ id: uid(), text: "", level: 0, fn: "", format: "" });
+    var gone = S.objectives.slice(x).map(function (o) { return o.id; }).concat(S.questions.slice(y).map(function (q) { return q.id; }));
+    S.objectives = S.objectives.slice(0, x); S.questions = S.questions.slice(0, y);
+    Object.keys(S.marks).forEach(function (m) { var p = m.split("|"); if (gone.indexOf(p[0]) >= 0 || gone.indexOf(p[1]) >= 0) delete S.marks[m]; });
+    S.example = false; syncDims(); refresh(true);
+    say("Grille de " + x + " objectif" + (x > 1 ? "s" : "") + " et " + y + " question" + (y > 1 ? "s" : "") + ".");
+    var ta = grid.querySelector("textarea"); if (ta && !ta.value) ta.focus();
+  });
+  function resetResize() { clearTimeout(resizeTimer); resizeArmed = false; btnResize.textContent = "Créer la grille"; btnResize.classList.remove("danger"); }
+  var titleIn = document.getElementById("testTitle");
+  titleIn.addEventListener("input", function () { S.title = titleIn.value; S.example = false; renderDiag(); save(); });
+
+  // Confirmation en deux temps (les boîtes de dialogue du navigateur sont bloquées)
+  function twoStep(btn, label, run) {
+    var armed = false, timer = null, orig = btn.textContent;
+    btn.addEventListener("click", function () {
+      if (!armed && !isEmpty()) {
+        armed = true; btn.textContent = label; btn.classList.add("danger");
+        timer = setTimeout(function () { armed = false; btn.textContent = orig; btn.classList.remove("danger"); }, 4000);
+        return;
+      }
+      clearTimeout(timer); armed = false; btn.textContent = orig; btn.classList.remove("danger");
+      run();
+    });
+  }
+  function isEmpty() { return !S.title && !S.objectives.some(activeO) && !S.questions.some(activeQ); }
+  twoStep(document.getElementById("btnNew"), "Effacer la grille actuelle ?", function () { S = blank(); titleIn.value = ""; syncDims(); refresh(true); say("Nouvelle grille vide."); });
+
+  // Import
+  var fileIn = document.getElementById("fileIn");
+  document.getElementById("btnImport").addEventListener("click", function () { fileIn.click(); });
+  fileIn.addEventListener("change", function () {
+    var f = fileIn.files && fileIn.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var d = JSON.parse(r.result);
+        if (!valid(d)) throw new Error("format");
+        S = d; S.example = false; titleIn.value = S.title || ""; syncDims(); refresh(true); say("Fichier « " + f.name + " » ouvert.");
+      } catch (err) { say("Ce fichier n'est pas un tableau de spécification enregistré par cette application."); }
+      fileIn.value = "";
+    };
+    r.readAsText(f);
+  });
+
+  // Exports
+  function rows() {
+    var qs = S.questions, out = [];
+    out.push(["Objectif"].concat(qs.map(function (q, j) { return "Q" + (j + 1); }), ["Total questions"]));
+    S.objectives.forEach(function (o, i) {
+      var n = 0;
+      var cells = qs.map(function (q) { var on = mk(o, q); if (on) n++; return on ? "X" : ""; });
+      out.push([(i + 1) + ". " + (o.text || "")].concat(cells, [String(n)]));
+    });
+    out.push(["Niveau visé"].concat(qs.map(function (q) { return q.level ? LEVELS[q.level - 1] : ""; })));
+    out.push(["Format"].concat(qs.map(function (q) { return q.format || ""; })));
+    out.push(["Fonction"].concat(qs.map(function (q) { return q.fn || ""; })));
+    if (qs.some(function (q) { return q.text && q.text.trim(); })) {
+      out.push([]);
+      out.push(["Question", "Texte"]);
+      qs.forEach(function (q, j) { out.push(["Q" + (j + 1), q.text || ""]); });
+    }
+    return out;
+  }
+  function slug() { return (S.title || "tableau-specification").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "tableau-specification"; }
+  document.getElementById("btnCopy").addEventListener("click", function () {
+    var txt = (S.title ? S.title + "\n" : "") + rows().map(function (r) { return r.map(function (c) { return String(c).replace(/[\t\n]/g, " "); }).join("\t"); }).join("\n");
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return say("La copie n'est pas disponible dans cette vue.");
+    navigator.clipboard.writeText(txt).then(function () { say("Tableau copié : collez-le dans Excel ou Word."); }, function () { say("La copie a été refusée par le navigateur."); });
+  });
+
+  var downloads = null;
+  var standalone = !(window.claude && typeof window.claude.use === "function");
+  function saveFile(name, data, okMsg) {
+    if (!downloads && standalone) {
+      try {
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([data], { type: /\.csv$/.test(name) ? "text/csv;charset=utf-8" : "application/json" }));
+        a.download = name; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+        say(okMsg);
+      } catch (e) { say("L'enregistrement n'a pas pu se faire."); }
+      return;
+    }
+    if (!downloads) return say("L'enregistrement de fichier n'est pas disponible dans cette vue.");
+    downloads.save({ filename: name, data: data }).then(function () { say(okMsg); }, function (err) {
+      var c = err && err.code;
+      if (c === "declined") say("Enregistrement annulé.");
+      else if (c === "rate_limited") say("Une demande est déjà ouverte : réessayez dans un instant.");
+      else say("L'enregistrement n'a pas pu se faire ici.");
+    });
+  }
+  document.getElementById("btnSaveJson").addEventListener("click", function () {
+    var d = JSON.parse(JSON.stringify(S)); delete d.example;
+    saveFile(slug() + ".json", JSON.stringify(d, null, 2), "Fichier .json enregistré : rouvrez-le plus tard avec « Ouvrir un fichier .json ».");
+  });
+  document.getElementById("btnCsv").addEventListener("click", function () {
+    var csv = "﻿" + (S.title ? '"' + S.title.replace(/"/g, '""') + '"\n' : "") + rows().map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(";"); }).join("\n");
+    saveFile(slug() + ".csv", csv, "Fichier .csv enregistré : il s'ouvre dans Excel.");
+  });
+
+  var statusEl = document.getElementById("status"), sayTimer = null;
+  function say(m) { statusEl.textContent = m; clearTimeout(sayTimer); sayTimer = setTimeout(function () { statusEl.textContent = ""; }, 6000); }
+
+  // Démarrage
+  S = load();
+  titleIn.value = S.title || "";
+  syncDims();
+  refresh(true);
+  window.addEventListener("resize", autosizeAll);
+
+  if (standalone) {
+    document.getElementById("btnSaveJson").classList.remove("hidden");
+    document.getElementById("btnCsv").classList.remove("hidden");
+  }
+  if (!standalone) {
+    window.claude.use("downloads").then(function (d) {
+      if (!d) return;
+      downloads = d;
+      document.getElementById("btnSaveJson").classList.remove("hidden");
+      document.getElementById("btnCsv").classList.remove("hidden");
+    }, function () { /* indisponible */ });
+  }
+})();
+</script>
+</body>
+</html>
