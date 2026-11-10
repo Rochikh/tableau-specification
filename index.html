@@ -136,6 +136,11 @@ tr.coltot th { text-align: left; font-size: 13px; padding: 6px 10px; background:
 .help .panel { font-size: 14px; }
 .help p { margin: 0; }
 .verbs { font-size: 13px; color: var(--muted); }
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(10, 18, 30, .6); display: flex; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; }
+.sheet { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px 20px; max-width: 1000px; width: 100%; display: grid; gap: 12px; }
+.sheethead { display: flex; gap: 12px; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--surface); padding-bottom: 4px; }
+.sheet img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+.howto { margin: 0; padding-left: 22px; display: grid; gap: 5px; font-size: 14px; }
 .hidden { display: none !important; }
 #fileIn { display: none; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -151,6 +156,7 @@ tr.coltot th { text-align: left; font-size: 13px; padding: 6px 10px; background:
       <input id="testTitle" type="text" placeholder="Nom de votre test">
     </div>
     <div class="actions" role="group" aria-label="Fichier">
+      <button class="btn" id="btnHelp" type="button" aria-haspopup="dialog">Comment utiliser ce tableau ?</button>
       <button class="btn" id="btnNew" type="button">Nouveau test</button>
       <button class="btn" id="btnImport" type="button">Ouvrir un fichier .json</button>
       <button class="btn hidden" id="btnSaveJson" type="button">Enregistrer (.json)</button>
@@ -218,6 +224,27 @@ tr.coltot th { text-align: left; font-size: 13px; padding: 6px 10px; background:
       <p class="verbs">À éviter : connaître, comprendre, savoir, maîtriser, être sensibilisé. On ne peut pas les observer.</p>
     </div>
   </section>
+</div>
+
+<div class="overlay hidden" id="help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="sheet">
+    <div class="sheethead">
+      <h2 id="helpTitle">Comment utiliser ce tableau</h2>
+      <button class="btn" id="btnHelpClose" type="button">Fermer</button>
+    </div>
+    <img id="helpGif" alt="Démonstration animée : un test final sur la sécurité incendie est saisi puis diagnostiqué, étape par étape." width="960" height="720">
+    <p class="muted" style="margin:0;font-size:13px">Démonstration de 52 secondes, en boucle, sur un exemple : un test final de 5 questions pour 3 objectifs.</p>
+    <ol class="howto">
+      <li>Nommez le test, indiquez le nombre d'objectifs et de questions, puis cliquez sur « Créer la grille ».</li>
+      <li>Recopiez ou résumez vos questions.</li>
+      <li>Rédigez vos objectifs avec un verbe mesurable. L'outil affiche le niveau reconnu sous chaque objectif.</li>
+      <li>Cochez la case quand la question vérifie l'objectif. Le total se calcule en bout de ligne.</li>
+      <li>Choisissez pour chaque question le niveau visé, le format et la fonction (P, AE, TF).</li>
+      <li>Lisez le diagnostic sous le tableau.</li>
+      <li>Retravaillez les questions signalées : le diagnostic se met à jour.</li>
+      <li>Copiez le tableau vers Excel ou Word, ou enregistrez-le pour le rouvrir plus tard.</li>
+    </ol>
+  </div>
 </div>
 
 <script>
@@ -594,6 +621,16 @@ tr.coltot th { text-align: left; font-size: 13px; padding: 6px 10px; background:
     var csv = "﻿" + (S.title ? '"' + S.title.replace(/"/g, '""') + '"\n' : "") + rows().map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(";"); }).join("\n");
     saveFile(slug() + ".csv", csv, "Fichier .csv enregistré : il s'ouvre dans Excel.");
   });
+
+  // Aide : démonstration animée et étapes
+  var help = document.getElementById("help"), btnHelp = document.getElementById("btnHelp"), helpGif = document.getElementById("helpGif");
+  function openHelp() { if (!helpGif.getAttribute("src")) helpGif.src = "demo.gif"; help.classList.remove("hidden"); document.getElementById("btnHelpClose").focus(); }
+  function closeHelp() { help.classList.add("hidden"); btnHelp.focus(); }
+  btnHelp.addEventListener("click", openHelp);
+  document.getElementById("btnHelpClose").addEventListener("click", closeHelp);
+  help.addEventListener("click", function (e) { if (e.target === help) closeHelp(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !help.classList.contains("hidden")) closeHelp(); });
+  helpGif.addEventListener("error", function () { helpGif.classList.add("hidden"); });
 
   var statusEl = document.getElementById("status"), sayTimer = null;
   function say(m) { statusEl.textContent = m; clearTimeout(sayTimer); sayTimer = setTimeout(function () { statusEl.textContent = ""; }, 6000); }
