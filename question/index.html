@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ma question est-elle bonne ?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Plan : une carte à la fois dans une colonne étroite, fil des 8 cartes au-dessus, feu et score sur un écran final */
+  --ink: #1b2432;
+  --muted: #5a6577;
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --line: #d3dae4;
+  --accent: #16345F;
+  --accent-soft: #e5ecf5;
+  --on-accent: #ffffff;
+  --feu-r: #C0392B; --r-ink: #b3261e; --r-soft: #fbe8e6;
+  --feu-o: #E08E0B; --o-ink: #8f5500; --o-soft: #fbefd9;
+  --feu-v: #2E8B57; --v-ink: #1d7448; --v-soft: #e3f2ea;
+  --feu-0: #a9b3c2;
+  --display: "Space Grotesk", Arial, sans-serif;
+  --body: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e4e9f0; --muted: #9ba7b9; --bg: #0e1520; --surface: #162030; --line: #2b3a50;
+    --accent: #93b5e6; --accent-soft: #1d2b42; --on-accent: #0e1520;
+    --feu-r: #e2574a; --r-ink: #f08c82; --r-soft: #3b1c1a;
+    --feu-o: #eaa233; --o-ink: #e3ac55; --o-soft: #382914;
+    --feu-v: #45b07a; --v-ink: #67c697; --v-soft: #15301f;
+    --feu-0: #56657c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #e4e9f0; --muted: #9ba7b9; --bg: #0e1520; --surface: #162030; --line: #2b3a50;
+  --accent: #93b5e6; --accent-soft: #1d2b42; --on-accent: #0e1520;
+  --feu-r: #e2574a; --r-ink: #f08c82; --r-soft: #3b1c1a;
+  --feu-o: #eaa233; --o-ink: #e3ac55; --o-soft: #382914;
+  --feu-v: #45b07a; --v-ink: #67c697; --v-soft: #15301f;
+  --feu-0: #56657c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+h1, h2, h3 { font-family: var(--display); color: var(--accent); margin: 0; text-wrap: balance; }
+h1 { font-size: 27px; font-weight: 700; line-height: 1.1; }
+h2 { font-size: 22px; font-weight: 700; line-height: 1.15; }
+h3 { font-size: 15px; font-weight: 700; }
+p { margin: 0; }
+button, textarea, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .45; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h2:focus { outline: none; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 20px 20px 40px; display: grid; gap: 14px; }
+.top { display: grid; gap: 6px; border-bottom: 3px solid var(--accent); padding-bottom: 12px; }
+.top p { font-size: 15px; }
+.top b { color: var(--accent); }
+.champ { display: grid; gap: 5px; }
+.champ label { font-size: 13px; color: var(--muted); }
+#question { width: 100%; min-height: 58px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 8px 11px; line-height: 1.4; font-size: 15px; }
+
+.fil { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pas-fil { min-width: 36px; height: 36px; border-radius: 18px; border: 1.5px solid var(--line); background: var(--surface); font-family: var(--display); font-weight: 700; font-size: 15px; color: var(--muted); padding: 0 6px; }
+.pas-fil.fin { padding: 0 14px; }
+.pas-fil:hover { border-color: var(--accent); }
+.pas-fil.ok { border-color: var(--feu-v); background: var(--v-soft); color: var(--v-ink); }
+.pas-fil.ko { border-color: var(--feu-o); background: var(--o-soft); color: var(--o-ink); }
+.pas-fil.ko.crit { border-color: var(--feu-r); background: var(--r-soft); color: var(--r-ink); }
+.pas-fil.ici { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+.carte, #resultat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; min-height: 380px; box-shadow: 0 6px 20px rgba(22, 52, 95, .07); }
+.tete { display: flex; align-items: center; gap: 12px; }
+.num { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-family: var(--display); font-weight: 700; font-size: 22px; display: flex; align-items: center; justify-content: center; }
+.crit .num { background: var(--feu-r); color: #fff; }
+.titre { flex: 1; min-width: 0; }
+.tag { font-family: var(--display); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.etat { flex: none; font-size: 13px; font-weight: bold; border-radius: 11px; padding: 3px 10px; }
+.etat:empty { display: none; }
+.etat.v { background: var(--v-soft); color: var(--v-ink); }
+.etat.o { background: var(--o-soft); color: var(--o-ink); }
+.etat.r { background: var(--r-soft); color: var(--r-ink); }
+.double { font-size: 13.5px; color: var(--r-ink); font-weight: bold; }
+.items { display: grid; gap: 4px; }
+.item, .choix { display: flex; gap: 11px; align-items: flex-start; padding: 8px 9px; border-radius: 8px; cursor: pointer; }
+.item:hover, .choix:hover, .nr:hover { background: var(--accent-soft); }
+.item input, .choix input, .nr input { flex: none; width: 19px; height: 19px; margin: 2px 0 0; accent-color: var(--accent); }
+.choix b { color: var(--accent); display: block; }
+.ref { width: 100%; border-collapse: collapse; font-size: 15px; }
+.ref td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.ref td:first-child { font-weight: bold; color: var(--accent); }
+.ref tr:last-child td { border-bottom: 0; }
+.niv { display: grid; }
+.nivrow { display: grid; grid-template-columns: minmax(0, 1fr) 82px 82px; align-items: center; border-bottom: 1px solid var(--line); }
+.nivrow:last-child { border-bottom: 0; }
+.nivrow.head { font-family: var(--display); font-weight: 700; font-size: 13px; color: var(--accent); text-align: center; padding-bottom: 4px; }
+.nivrow.pareil { background: var(--v-soft); }
+.nl { padding: 7px 8px 7px 2px; font-size: 14.5px; color: var(--muted); }
+.nl b { display: block; color: var(--accent); font-size: 15.5px; }
+.nr { display: flex; justify-content: center; align-items: center; align-self: stretch; cursor: pointer; border-radius: 8px; }
+.nr input { margin: 0; }
+.nivmsg { font-weight: bold; font-size: 15px; border-radius: 8px; padding: 8px 10px; background: var(--accent-soft); color: var(--accent); }
+.nivmsg.v { background: var(--v-soft); color: var(--v-ink); }
+.nivmsg.o { background: var(--o-soft); color: var(--o-ink); }
+.pas { margin-top: auto; padding-top: 10px; font-size: 14.5px; color: var(--muted); border-top: 1px dashed var(--line); }
+.pas b { color: var(--accent); }
+
+.nav { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.nav .pos { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; flex: 1; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 15px; font-size: 15px; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: bold; }
+.btn.petit { padding: 5px 10px; font-size: 13.5px; justify-self: start; }
+
+.verdict { display: flex; gap: 14px; align-items: center; border-radius: 12px; padding: 14px 16px; background: var(--accent-soft); }
+.verdict.rouge { background: var(--r-soft); }
+.verdict.orange { background: var(--o-soft); }
+.verdict.vert { background: var(--v-soft); }
+.pastille { flex: none; width: 46px; height: 46px; border-radius: 50%; background: var(--feu-0); }
+.pastille.rouge { background: var(--feu-r); }
+.pastille.orange { background: var(--feu-o); }
+.pastille.vert { background: var(--feu-v); }
+.verdict .mid { flex: 1; min-width: 0; }
+.verdict .t { font-family: var(--display); font-weight: 700; font-size: 21px; color: var(--accent); line-height: 1.15; }
+.verdict .c { font-size: 14px; color: var(--muted); }
+.score { flex: none; font-family: var(--display); font-weight: 700; font-size: 34px; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.score small { font-size: 18px; font-weight: 500; color: var(--muted); }
+.areprendre { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.areprendre li { border-left: 4px solid var(--feu-o); background: var(--bg); border-radius: 4px; padding: 9px 12px; font-size: 15px; display: grid; gap: 4px; }
+.areprendre li.crit { border-color: var(--feu-r); }
+.areprendre li.tol { border-color: var(--feu-0); }
+.areprendre .vide { color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.status { font-size: 13.5px; color: var(--muted); min-height: 19px; }
+.regle { display: grid; gap: 5px; font-size: 14px; border-top: 1px solid var(--line); padding-top: 10px; margin-top: auto; }
+.regle div { display: flex; gap: 8px; align-items: center; }
+.regle .pastille { width: 14px; height: 14px; }
+.signature { font-size: 12.5px; color: var(--muted); text-align: right; }
+@media (max-width: 460px) {
+  .wrap { padding: 14px 16px 30px; }
+  h1 { font-size: 23px; } h2 { font-size: 19px; }
+  .carte, #resultat { padding: 16px; }
+  .nivrow { grid-template-columns: minmax(0, 1fr) 64px 64px; }
+  .score { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Ma question est-elle bonne&nbsp;?</h1>
+    <p>8 cartes, une à la fois. <b>Cochez ce qui est vrai</b>, puis passez à la suivante. Le feu et le score arrivent à la fin.</p>
+  </header>
+
+  <div class="champ">
+    <label for="question">La question à vérifier (facultatif, elle reste sous vos yeux et passe dans le résumé)</label>
+    <textarea id="question" placeholder="Collez ici l'énoncé et ses réponses"></textarea>
+  </div>
+
+  <nav class="fil" id="fil" aria-label="Cartes">
+    <button type="button" class="pas-fil" data-go="0" aria-label="Carte 1">1</button>
+    <button type="button" class="pas-fil" data-go="1" aria-label="Carte 2">2</button>
+    <button type="button" class="pas-fil" data-go="2" aria-label="Carte 3">3</button>
+    <button type="button" class="pas-fil" data-go="3" aria-label="Carte 4">4</button>
+    <button type="button" class="pas-fil" data-go="4" aria-label="Carte 5">5</button>
+    <button type="button" class="pas-fil" data-go="5" aria-label="Carte 6">6</button>
+    <button type="button" class="pas-fil" data-go="6" aria-label="Carte 7">7</button>
+    <button type="button" class="pas-fil" data-go="7" aria-label="Carte 8">8</button>
+    <button type="button" class="pas-fil fin" data-go="8">Résultat</button>
+  </nav>
+
+  <main id="scene">
+
+    <section class="carte" data-n="1" data-court="fonction" data-piste="Décider de la fonction avant d'écrire. Le score, le feedback et les tentatives en dépendent.">
+      <div class="tete"><div class="num">1</div><div class="titre"><div class="tag">Fonction</div><h2 tabindex="-1">À quoi sert-elle&nbsp;?</h2></div><span class="etat"></span></div>
+      <div class="items" role="radiogroup" aria-label="Fonction de la question">
+        <label class="choix"><input type="radio" name="fn" value="P" id="fnP"><span><b>Avant le module</b>Positionnement&nbsp;: repérer ce que l'apprenant sait déjà. Score indicatif.</span></label>
+        <label class="choix"><input type="radio" name="fn" value="AE" id="fnAE"><span><b>Pendant</b>Auto-évaluation&nbsp;: l'apprenant vérifie qu'il a compris. Feedback qui explique.</span></label>
+        <label class="choix"><input type="radio" name="fn" value="TF" id="fnTF"><span><b>À la fin</b>Test final&nbsp;: prouver que l'objectif est atteint. Score enregistré.</span></label>
+      </div>
+      <p class="pas"><b>Sinon&nbsp;:</b> décider avant d'écrire. Le score, le feedback et les tentatives en dépendent.</p>
+    </section>
+
+    <section class="carte crit" data-n="2" data-court="objectif" data-piste="La rattacher à un objectif du module ou la supprimer. Écrire cet objectif avec un verbe qu'on peut observer." hidden>
+      <div class="tete"><div class="num">2</div><div class="titre"><div class="tag">Objectif</div><h2 tabindex="-1">Que vérifie-t-elle&nbsp;?</h2></div><span class="etat"></span></div>
+      <div class="double">Une case vide ici donne un feu rouge.</div>
+      <div class="items">
+        <label class="item"><input type="checkbox" id="c2a"><span>Je peux citer l'objectif du module qu'elle vérifie.</span></label>
+        <label class="item"><input type="checkbox" id="c2b"><span>Cet objectif contient un verbe qu'on peut observer&nbsp;: citer, appliquer, choisir, justifier.</span></label>
+        <label class="item"><input type="checkbox" id="c2c"><span>Elle porte sur l'essentiel de cet objectif, sans détail secondaire.</span></label>
+      </div>
+      <p class="pas"><b>Sinon&nbsp;:</b> la rattacher à un objectif ou la supprimer. Évitez «&nbsp;connaître&nbsp;», «&nbsp;comprendre&nbsp;», «&nbsp;savoir&nbsp;»&nbsp;: on ne peut pas les observer.</p>
+    </section>
+
+    <section class="carte" data-n="3" data-court="niveau" hidden>
+      <div class="tete"><div class="num">3</div><div class="titre"><div class="tag">Niveau</div><h2 tabindex="-1">La question demande-t-elle ce que l'objectif annonce&nbsp;?</h2></div><span class="etat"></span></div>
+      <p>Cochez une case par colonne&nbsp;: ce que l'apprenant doit faire pour répondre à la question, puis ce que le verbe de l'objectif annonce. La carte est validée quand les deux cases sont sur la même ligne.</p>
+      <div class="niv" id="niv">
+        <div class="nivrow head"><span></span><span>La question</span><span>L'objectif</span></div>
+        <div class="nivrow"><span class="nl"><b>Se rappeler</b>retrouver une information apprise · citer, nommer</span>
+          <label class="nr"><input type="radio" name="nq" value="1" id="nq1" aria-label="La question demande de se rappeler"></label>
+          <label class="nr"><input type="radio" name="no" value="1" id="no1" aria-label="L'objectif annonce se rappeler"></label></div>
+        <div class="nivrow"><span class="nl"><b>Expliquer</b>dire avec ses mots, donner un exemple · expliquer, reformuler</span>
+          <label class="nr"><input type="radio" name="nq" value="2" id="nq2" aria-label="La question demande d'expliquer"></label>
+          <label class="nr"><input type="radio" name="no" value="2" id="no2" aria-label="L'objectif annonce expliquer"></label></div>
+        <div class="nivrow"><span class="nl"><b>Appliquer à un cas</b>utiliser la règle dans une situation · appliquer, remplir, orienter</span>
+          <label class="nr"><input type="radio" name="nq" value="3" id="nq3" aria-label="La question demande d'appliquer à un cas"></label>
+          <label class="nr"><input type="radio" name="no" value="3" id="no3" aria-label="L'objectif annonce appliquer à un cas"></label></div>
+        <div class="nivrow"><span class="nl"><b>Analyser</b>repérer ce qui ne va pas, trouver la cause · distinguer, diagnostiquer</span>
+          <label class="nr"><input type="radio" name="nq" value="4" id="nq4" aria-label="La question demande d'analyser"></label>
+          <label class="nr"><input type="radio" name="no" value="4" id="no4" aria-label="L'objectif annonce analyser"></label></div>
+        <div class="nivrow"><span class="nl"><b>Juger, choisir</b>décider entre plusieurs solutions · choisir, justifier</span>
+          <label class="nr"><input type="radio" name="nq" value="5" id="nq5" aria-label="La question demande de juger, choisir"></label>
+          <label class="nr"><input type="radio" name="no" value="5" id="no5" aria-label="L'objectif annonce juger, choisir"></label></div>
+      </div>
+      <p class="nivmsg" id="nivmsg">Cochez une case dans chaque colonne.</p>
+      <p class="pas"><b>Exemple&nbsp;:</b> un objectif «&nbsp;orienter un public&nbsp;» se vérifie avec un cas à traiter. Une question de mémoire ne suffit pas.</p>
+    </section>
+
+    <section class="carte" data-n="4" data-court="format" data-piste="Changer de format avant de réécrire les réponses." hidden>
+      <div class="tete"><div class="num">4</div><div class="titre"><div class="tag">Format</div><h2 tabindex="-1">Le type de question est-il adapté&nbsp;?</h2></div><span class="etat"></span></div>
+      <table class="ref">
+        <tr><td>Se rappeler, expliquer</td><td>Choix unique, texte à compléter</td></tr>
+        <tr><td>Classer, relier</td><td>Appariement, tri</td></tr>
+        <tr><td>Appliquer, analyser, juger</td><td>Mise en situation, scénario</td></tr>
+      </table>
+      <div class="items">
+        <label class="item"><input type="checkbox" id="c4a"><span>Le format correspond au niveau visé.</span></label>
+      </div>
+      <p class="pas"><b>Sinon&nbsp;:</b> changer de format avant de réécrire les réponses.</p>
+    </section>
+
+    <section class="carte crit" data-n="5" data-court="pièges" data-piste="Faire passer la question à un collègue qui n'a pas suivi le module. S'il réussit, elle mesure autre chose que le module." hidden>
+      <div class="tete"><div class="num">5</div><div class="titre"><div class="tag">Pièges</div><h2 tabindex="-1">Peut-on la réussir sans savoir&nbsp;?</h2></div><span class="etat"></span></div>
+      <div class="double">Une case vide ici donne un feu rouge.</div>
+      <div class="items">
+        <label class="item"><input type="checkbox" id="c5a"><span>La bonne réponse a la même longueur et la même précision que les autres.</span></label>
+        <label class="item"><input type="checkbox" id="c5b"><span>Aucun accord, article ou mot de l'énoncé ne désigne la réponse.</span></label>
+        <label class="item"><input type="checkbox" id="c5c"><span>Ni «&nbsp;toutes ces réponses&nbsp;», ni «&nbsp;aucune de ces réponses&nbsp;».</span></label>
+        <label class="item"><input type="checkbox" id="c5d"><span>Aucun mot absolu&nbsp;: toujours, jamais, tous, uniquement.</span></label>
+        <label class="item"><input type="checkbox" id="c5e"><span>Aucune autre question du test ne donne la réponse.</span></label>
+      </div>
+      <p class="pas"><b>Test rapide&nbsp;:</b> un collègue qui n'a pas suivi le module la fait. S'il réussit, elle mesure autre chose que le module.</p>
+    </section>
+
+    <section class="carte" data-n="6" data-court="mauvaises réponses" data-piste="Remplacer chaque réponse que personne ne choisit par une erreur entendue sur le terrain." hidden>
+      <div class="tete"><div class="num">6</div><div class="titre"><div class="tag">Mauvaises réponses</div><h2 tabindex="-1">Les mauvais choix sont-ils crédibles&nbsp;?</h2></div><span class="etat"></span></div>
+      <div class="items">
+        <label class="item"><input type="checkbox" id="c6a"><span>Chacune correspond à une erreur que les apprenants font vraiment.</span></label>
+        <label class="item"><input type="checkbox" id="c6b"><span>Celui qui hésite peut la choisir. Celui qui sait l'écarte.</span></label>
+        <label class="item"><input type="checkbox" id="c6c"><span>Au moins trois choix. Un vrai/faux se réussit une fois sur deux au hasard.</span></label>
+      </div>
+      <p class="pas"><b>Sinon&nbsp;:</b> remplacer chaque réponse que personne ne choisit par une erreur entendue sur le terrain.</p>
+    </section>
+
+    <section class="carte" data-n="7" data-court="clarté" data-piste="Couper, tourner à l'affirmative, unifier le vocabulaire." hidden>
+      <div class="tete"><div class="num">7</div><div class="titre"><div class="tag">Clarté</div><h2 tabindex="-1">Est-elle facile à lire&nbsp;?</h2></div><span class="etat"></span></div>
+      <div class="items">
+        <label class="item"><input type="checkbox" id="c7a"><span>Une seule idée dans l'énoncé.</span></label>
+        <label class="item"><input type="checkbox" id="c7b"><span>Aucune négation&nbsp;: «&nbsp;ne… pas&nbsp;», «&nbsp;sauf&nbsp;», «&nbsp;n'a pas le droit&nbsp;».</span></label>
+        <label class="item"><input type="checkbox" id="c7c"><span>Les mêmes mots pour les mêmes choses, du début à la fin.</span></label>
+        <label class="item"><input type="checkbox" id="c7d"><span>Une seule bonne réponse défendable.</span></label>
+      </div>
+      <p class="pas"><b>Sinon&nbsp;:</b> couper, tourner à l'affirmative, unifier le vocabulaire.</p>
+    </section>
+
+    <section class="carte" data-n="8" data-court="IA" data-piste="Pour un test final, partir d'un cas du module ou faire choisir puis justifier." hidden>
+      <div class="tete"><div class="num">8</div><div class="titre"><div class="tag">IA</div><h2 tabindex="-1">Et avec ChatGPT ouvert&nbsp;?</h2></div><span class="etat"></span></div>
+      <p>Collez la question dans un chatbot et regardez sa réponse.</p>
+      <div class="items">
+        <label class="item"><input type="checkbox" id="c8a"><span>Pour répondre juste, il faut un élément propre au module&nbsp;: un cas, un document, une procédure interne.</span></label>
+      </div>
+      <p class="pas"><b>Sinon&nbsp;:</b> acceptable en positionnement et en auto-évaluation. Pour un test final, partir d'un cas du module ou faire choisir puis justifier.</p>
+    </section>
+
+    <section id="resultat" aria-live="polite" hidden>
+      <div class="verdict" id="verdict">
+        <span class="pastille" id="pastille"></span>
+        <div class="mid"><h2 class="t" id="vT" tabindex="-1">Résultat</h2><div class="c" id="vC"></div></div>
+        <div class="score" id="score">0<small> / 8</small></div>
+      </div>
+      <p id="phrase"></p>
+      <ul class="areprendre" id="liste"></ul>
+      <div class="actions">
+        <button type="button" class="btn primary" id="btnCopier">Copier le résumé</button>
+        <button type="button" class="btn" id="btnNew">Nouvelle question</button>
+      </div>
+      <div class="status" id="status" role="status"></div>
+      <div class="regle">
+        <h3>Règle du feu</h3>
+        <div><span class="pastille rouge"></span><span><b>Rouge</b>&nbsp;: une carte non validée en 2 ou en 5. Réécrire la question.</span></div>
+        <div><span class="pastille orange"></span><span><b>Orange</b>&nbsp;: une carte non validée ailleurs. L'améliorer.</span></div>
+        <div><span class="pastille vert"></span><span><b>Vert</b>&nbsp;: tout est validé. Publier.</span></div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="nav">
+    <button type="button" class="btn" id="btnPrev">Carte précédente</button>
+    <span class="pos" id="pos">Carte 1 sur 8</span>
+    <button type="button" class="btn primary" id="btnNext">Carte suivante</button>
+  </div>
+  <p class="signature">Rochane Kherbouche · contact@rochane.fr</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var FN = { P: "positionnement", AE: "auto-évaluation", TF: "test final" };
+  var NIV = ["", "se rappeler", "expliquer", "appliquer à un cas", "analyser", "juger, choisir"];
+  var LABEL = {
+    rouge: "Rouge · réécrire la question",
+    orange: "Orange · améliorer la question",
+    vert: "Vert · publier la question"
+  };
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".carte"));
+  var pills = Array.prototype.slice.call(document.querySelectorAll(".pas-fil"));
+  var step = 0, shown = false, FIN = cards.length;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function radio(name) { var r = document.querySelector("input[name='" + name + "']:checked"); return r ? r.value : ""; }
+  function fn() { return radio("fn"); }
+
+  // Carte 3 : compare ce que la question fait faire et ce que l'objectif annonce.
+  function niveau() {
+    var q = +radio("nq"), o = +radio("no");
+    if (!q || !o) return { ok: false, etat: "", msg: "Cochez une case dans chaque colonne.", note: "Les deux colonnes ne sont pas remplies.", piste: "Indiquer ce que la question fait faire, puis ce que le verbe de l'objectif annonce." };
+    var base = "Question : " + NIV[q] + ". Objectif : " + NIV[o] + ". ";
+    if (q === o) return { ok: true, etat: "v", msg: "Même ligne : la question est au niveau de l'objectif." };
+    if (q < o) return { ok: false, etat: "o", msg: "La question demande moins que l'objectif.", note: base + "La question demande moins que l'objectif.", piste: "Monter la question au niveau de l'objectif. Un objectif « orienter un public » se vérifie avec un cas à traiter, une question de mémoire ne suffit pas." };
+    return { ok: false, etat: "o", msg: "La question demande plus que l'objectif.", note: base + "La question demande plus que l'objectif.", piste: "Ramener la question au niveau annoncé, ou réécrire l'objectif si le module vise ce niveau." };
+  }
+
+  function stateOf(card) {
+    var n = +card.getAttribute("data-n"), f = fn();
+    var s = { n: n, card: card, title: card.querySelector("h2").textContent.replace(/\s+/g, " ").trim(), piste: card.getAttribute("data-piste"), crit: n === 2 || n === 5, tol: false, notes: [] };
+    if (n === 1) {
+      if (!f) s.notes.push("Case vide : la fonction de la question n'est pas choisie.");
+    } else if (n === 3) {
+      var nv = niveau();
+      if (!nv.ok) { s.notes.push(nv.note); s.piste = nv.piste; }
+    } else {
+      Array.prototype.forEach.call(card.querySelectorAll("input[type=checkbox]"), function (b) {
+        if (!b.checked) s.notes.push("Case vide : " + b.parentNode.querySelector("span").textContent.replace(/\s+/g, " ").trim());
+      });
+    }
+    s.ok = s.notes.length === 0;
+    if (n === 8 && !s.ok) {
+      if (f === "P" || f === "AE") s.tol = true;
+      else if (!f) s.piste = "Acceptable en positionnement et en auto-évaluation. " + s.piste;
+    }
+    return s;
+  }
+
+  // Règle de la grille : rouge si la carte 2 ou 5 n'est pas validée, orange si une autre ne l'est pas, vert sinon.
+  function verdict(states) {
+    var fails = states.filter(function (s) { return !s.ok && !s.tol; });
+    if (fails.some(function (s) { return s.crit; })) return "rouge";
+    return fails.length ? "orange" : "vert";
+  }
+  function nbOk(states) { return states.filter(function (s) { return s.ok; }).length; }
+  function count(states) {
+    var n = nbOk(states);
+    return n + " carte" + (n > 1 ? "s" : "") + " sur 8 validée" + (n > 1 ? "s" : "");
+  }
+  function ordre(a, b) { return (b.crit - a.crit) || (a.tol - b.tol) || (a.n - b.n); }
+
+  function sentence(states, color) {
+    var fails = states.filter(function (s) { return !s.ok && !s.tol; });
+    var tol = states.filter(function (s) { return s.tol; })[0];
+    var f = fn();
+    if (color === "rouge") {
+      var t = [];
+      if (fails.some(function (s) { return s.n === 2; })) t.push("La question ne se rattache pas clairement à un objectif du module.");
+      if (fails.some(function (s) { return s.n === 5; })) t.push("Elle peut se réussir sans savoir.");
+      var autres = fails.filter(function (s) { return !s.crit; }).length;
+      if (autres) t.push(autres + " autre" + (autres > 1 ? "s" : "") + " point" + (autres > 1 ? "s" : "") + " à reprendre ensuite.");
+      return t.join(" ");
+    }
+    if (color === "orange") {
+      return "L'objectif est identifié et aucun indice ne trahit la réponse. " + fails.length + " point" + (fails.length > 1 ? "s" : "") + " à reprendre avant de publier.";
+    }
+    if (tol) return "Tout est validé sauf la carte 8 (IA), ce qui est acceptable pour " + (f === "P" ? "un positionnement" : "une auto-évaluation") + ".";
+    return "Les 8 cartes sont validées.";
+  }
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+
+  function render() {
+    var states = cards.map(stateOf);
+    var color = verdict(states);
+
+    // Carte 3 : message et ligne commune
+    var nv = niveau(), q = radio("nq"), o = radio("no");
+    $("nivmsg").textContent = nv.msg; $("nivmsg").className = "nivmsg " + nv.etat;
+    Array.prototype.forEach.call(document.querySelectorAll("#niv .nivrow:not(.head)"), function (row, i) {
+      row.classList.toggle("pareil", nv.ok && +q === i + 1 && +o === i + 1);
+    });
+
+    states.forEach(function (s, i) {
+      var chip = s.card.querySelector(".etat"), pill = pills[i];
+      chip.className = "etat"; chip.textContent = "";
+      pill.className = "pas-fil";
+      if (s.ok) { chip.classList.add("v"); chip.textContent = "Validée"; pill.classList.add("ok"); }
+      else if (shown && s.tol) { chip.textContent = "Acceptable ici"; }
+      else if (shown) { chip.classList.add(s.crit ? "r" : "o"); chip.textContent = "À reprendre"; pill.classList.add("ko"); if (s.crit) pill.classList.add("crit"); }
+      s.card.hidden = step !== i;
+      if (step === i) pill.classList.add("ici");
+      pill.setAttribute("aria-current", step === i ? "step" : "false");
+    });
+    pills[FIN].className = "pas-fil fin" + (step === FIN ? " ici" : "");
+    $("resultat").hidden = step !== FIN;
+    $("btnPrev").disabled = step === 0;
+    $("btnNext").hidden = step === FIN;
+    $("btnNext").textContent = step === FIN - 1 ? "Voir le résultat" : "Carte suivante";
+    $("pos").textContent = step === FIN ? "Résultat" : "Carte " + (step + 1) + " sur 8";
+    if (step !== FIN) return;
+
+    $("verdict").className = "verdict " + color;
+    $("pastille").className = "pastille " + color;
+    $("vT").textContent = LABEL[color];
+    $("vC").textContent = count(states);
+    $("score").firstChild.nodeValue = String(nbOk(states));
+    $("phrase").textContent = sentence(states, color);
+    var list = $("liste");
+    list.textContent = "";
+    states.filter(function (s) { return !s.ok; }).sort(ordre).forEach(function (s) {
+      var li = el("li", s.crit ? "crit" : (s.tol ? "tol" : ""));
+      li.appendChild(el("b", "", s.n + ". " + s.title));
+      if (s.tol) {
+        li.appendChild(el("span", "", "Acceptable pour " + (fn() === "P" ? "un positionnement" : "une auto-évaluation") + ". À revoir si la question passe dans un test final."));
+      } else {
+        s.notes.forEach(function (v) { li.appendChild(el("span", "vide", v)); });
+        li.appendChild(el("span", "", "Piste : " + s.piste));
+      }
+      var b = el("button", "btn petit", "Revoir la carte " + s.n);
+      b.type = "button"; b.setAttribute("data-go", String(s.n - 1));
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+  }
+
+  function text() {
+    var states = cards.map(stateOf), color = verdict(states), f = fn();
+    var q = $("question").value.trim();
+    var out = ["Ma question est-elle bonne ?"];
+    if (q) out.push("Question : " + q);
+    out.push("Verdict : " + LABEL[color] + " (" + count(states) + ")");
+    out.push("Fonction : " + (f ? FN[f] : "non choisie"));
+    out.push(sentence(states, color));
+    var rest = states.filter(function (s) { return !s.ok; }).sort(ordre);
+    if (rest.length) {
+      out.push("");
+      out.push("À reprendre :");
+      rest.forEach(function (s) {
+        out.push(s.n + ". " + s.title);
+        if (s.tol) { out.push("   Acceptable pour cette fonction. À revoir pour un test final."); return; }
+        s.notes.forEach(function (v) { out.push("   " + v); });
+        out.push("   Piste : " + s.piste);
+      });
+    }
+    return out.join("\n");
+  }
+
+  var sayTimer = null;
+  function say(m) { $("status").textContent = m; clearTimeout(sayTimer); sayTimer = setTimeout(function () { $("status").textContent = ""; }, 6000); }
+  function calm() { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+
+  function go(i) {
+    step = Math.max(0, Math.min(FIN, i));
+    if (step === FIN) shown = true;
+    render();
+    var h = step === FIN ? $("vT") : cards[step].querySelector("h2");
+    h.focus({ preventScroll: true });
+    if ($("fil").getBoundingClientRect().top < 0) $("fil").scrollIntoView({ behavior: calm() ? "auto" : "smooth", block: "start" });
+  }
+
+  $("scene").addEventListener("change", render);
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-go]");
+    if (b) go(+b.getAttribute("data-go"));
+  });
+  $("btnPrev").addEventListener("click", function () { go(step - 1); });
+  $("btnNext").addEventListener("click", function () { go(step + 1); });
+  $("btnCopier").addEventListener("click", function () {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return say("La copie n'est pas disponible dans cette vue.");
+    navigator.clipboard.writeText(text()).then(
+      function () { say("Résumé copié : collez-le dans le carnet de séance."); },
+      function () { say("Le navigateur a refusé la copie."); }
+    );
+  });
+  $("btnNew").addEventListener("click", function () {
+    Array.prototype.forEach.call(document.querySelectorAll("#scene input"), function (i) { i.checked = false; });
+    $("question").value = "";
+    shown = false;
+    go(0);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
