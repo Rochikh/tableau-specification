@@ -151,10 +151,20 @@ h2:focus { outline: none; }
   .nivrow { grid-template-columns: minmax(0, 1fr) 64px 64px; }
   .score { font-size: 28px; }
 }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 2px solid var(--line); }
+.tool { font-family: var(--display); font-weight: 500; font-size: 15px; padding: 8px 14px; border-radius: 8px 8px 0 0; text-decoration: none; color: var(--muted); margin-bottom: -2px; border-bottom: 2px solid transparent; }
+.tool.current { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
+a.tool { color: var(--accent); background: var(--accent-soft); }
+a.tool:hover { text-decoration: underline; }
+@media (max-width: 520px) { .tools { flex-wrap: nowrap; } .tool { flex: 1 1 0; font-size: 13px; padding: 8px; text-align: center; } }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <nav class="tools" aria-label="Outils du site">
+    <a class="tool" href="../" target="_blank" rel="noopener">Tableau de spécification</a>
+    <span class="tool current" aria-current="page">Ma question est-elle bonne&nbsp;?</span>
+  </nav>
   <header class="top">
     <h1>Ma question est-elle bonne&nbsp;?</h1>
     <p>8 cartes, une à la fois. <b>Cochez ce qui est vrai</b>, puis passez à la suivante. Le feu et le score arrivent à la fin.</p>
