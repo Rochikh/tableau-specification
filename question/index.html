@@ -66,7 +66,7 @@ h2:focus { outline: none; }
 .top b { color: var(--accent); }
 .champ { display: grid; gap: 5px; }
 .champ label { font-size: 13px; color: var(--muted); }
-#question { width: 100%; min-height: 58px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 8px 11px; line-height: 1.4; font-size: 15px; }
+#question, #objectif { width: 100%; min-height: 58px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 8px 11px; line-height: 1.4; font-size: 15px; }
 
 .fil { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .pas-fil { min-width: 36px; height: 36px; border-radius: 18px; border: 1.5px solid var(--line); background: var(--surface); font-family: var(--display); font-weight: 700; font-size: 15px; color: var(--muted); padding: 0 6px; }
@@ -151,20 +151,10 @@ h2:focus { outline: none; }
   .nivrow { grid-template-columns: minmax(0, 1fr) 64px 64px; }
   .score { font-size: 28px; }
 }
-.tools { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 2px solid var(--line); }
-.tool { font-family: var(--display); font-weight: 500; font-size: 15px; padding: 8px 14px; border-radius: 8px 8px 0 0; text-decoration: none; color: var(--muted); margin-bottom: -2px; border-bottom: 2px solid transparent; }
-.tool.current { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
-a.tool { color: var(--accent); background: var(--accent-soft); }
-a.tool:hover { text-decoration: underline; }
-@media (max-width: 520px) { .tools { flex-wrap: nowrap; } .tool { flex: 1 1 0; font-size: 13px; padding: 8px; text-align: center; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <nav class="tools" aria-label="Outils du site">
-    <a class="tool" href="../">Tableau de spécification</a>
-    <span class="tool current" aria-current="page">Ma question est-elle bonne&nbsp;?</span>
-  </nav>
   <header class="top">
     <h1>Ma question est-elle bonne&nbsp;?</h1>
     <p>8 cartes, une à la fois. <b>Cochez ce qui est vrai</b>, puis passez à la suivante. Le feu et le score arrivent à la fin.</p>
@@ -173,6 +163,11 @@ a.tool:hover { text-decoration: underline; }
   <div class="champ">
     <label for="question">La question à vérifier (facultatif, elle reste sous vos yeux et passe dans le résumé)</label>
     <textarea id="question" placeholder="Collez ici l'énoncé et ses réponses"></textarea>
+  </div>
+
+  <div class="champ">
+    <label for="objectif">L'objectif du module que la question vérifie (facultatif, il reste sous vos yeux pour les cartes 2 et 3 et passe dans le résumé)</label>
+    <textarea id="objectif" class="obj" placeholder="Exemple : proposer des distracteurs crédibles pour une question à choix multiples"></textarea>
   </div>
 
   <nav class="fil" id="fil" aria-label="Cartes">
@@ -464,6 +459,8 @@ a.tool:hover { text-decoration: underline; }
     var q = $("question").value.trim();
     var out = ["Ma question est-elle bonne ?"];
     if (q) out.push("Question : " + q);
+    var ob = $("objectif").value.trim();
+    if (ob) out.push("Objectif : " + ob);
     out.push("Verdict : " + LABEL[color] + " (" + count(states) + ")");
     out.push("Fonction : " + (f ? FN[f] : "non choisie"));
     out.push(sentence(states, color));
@@ -485,37 +482,16 @@ a.tool:hover { text-decoration: underline; }
   function say(m) { $("status").textContent = m; clearTimeout(sayTimer); sayTimer = setTimeout(function () { $("status").textContent = ""; }, 6000); }
   function calm() { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
 
-  // Progression gardée dans ce navigateur : on la retrouve en revenant de l'autre outil.
-  var KEY = "ma-question-v1";
-  function inputs() { return Array.prototype.slice.call(document.querySelectorAll("#scene input")); }
-  function save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify({ q: $("question").value, on: inputs().map(function (i) { return i.checked ? 1 : 0; }), step: step, shown: shown }));
-    } catch (e) { /* stockage indisponible */ }
-  }
-  function restore() {
-    try {
-      var d = JSON.parse(localStorage.getItem(KEY) || "null"), list = inputs();
-      if (!d || !Array.isArray(d.on) || d.on.length !== list.length) return;
-      list.forEach(function (i, k) { i.checked = !!d.on[k]; });
-      $("question").value = d.q || "";
-      step = Math.max(0, Math.min(FIN, +d.step || 0));
-      shown = !!d.shown;
-    } catch (e) { /* stockage indisponible */ }
-  }
-
   function go(i) {
     step = Math.max(0, Math.min(FIN, i));
     if (step === FIN) shown = true;
     render();
-    save();
     var h = step === FIN ? $("vT") : cards[step].querySelector("h2");
     h.focus({ preventScroll: true });
     if ($("fil").getBoundingClientRect().top < 0) $("fil").scrollIntoView({ behavior: calm() ? "auto" : "smooth", block: "start" });
   }
 
-  $("scene").addEventListener("change", function () { render(); save(); });
-  $("question").addEventListener("input", save);
+  $("scene").addEventListener("change", render);
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-go]");
     if (b) go(+b.getAttribute("data-go"));
@@ -532,11 +508,11 @@ a.tool:hover { text-decoration: underline; }
   $("btnNew").addEventListener("click", function () {
     Array.prototype.forEach.call(document.querySelectorAll("#scene input"), function (i) { i.checked = false; });
     $("question").value = "";
+    $("objectif").value = "";
     shown = false;
     go(0);
   });
 
-  restore();
   render();
 })();
 </script>
